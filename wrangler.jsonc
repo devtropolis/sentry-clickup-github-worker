@@ -1,0 +1,13 @@
+
+{
+  "name": "sentry-clickup-github-worker",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-31",
+
+  // Bind your existing KV namespace here (use `wrangler kv namespace list` to find the ID)
+  "kv_namespaces": [
+    { "binding": "STATE", "id": "57917d22eaf3487c9d8b6a4114cfe4c3" }
+  ],
+
+  "observability": { "enabled": true }
+}

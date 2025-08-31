@@ -1,0 +1,15 @@
+# Node / build artifacts
+node_modules/
+dist/
+.cache/
+.DS_Store
+
+# Cloudflare / local config
+.wrangler/
+.dev.vars
+.env
+.env.*
+
+# Editors
+.vscode/
+.idea/
