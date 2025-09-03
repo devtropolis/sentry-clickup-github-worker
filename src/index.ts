@@ -6,6 +6,14 @@
 // - GET/PUT /admin/standards?token=...  (Manage Copilot standards text in KV)
 // - GET  /health
 
+// Cloudflare Workers KVNamespace type
+declare class KVNamespace {
+  get(key: string, type?: "text" | "json" | "arrayBuffer" | "stream"): Promise<any>;
+  put(key: string, value: string, options?: { expiration?: number; expirationTtl?: number; metadata?: any }): Promise<void>;
+  delete(key: string): Promise<void>;
+  list(options?: { prefix?: string; limit?: number }): Promise<{ keys: { name: string; expiration?: number; metadata?: any }[]; list_complete: boolean }>;
+}
+
 interface Env {
   // --- KV
   STATE: KVNamespace; // groupKey → { clickup_task_id?, issue_number?, count, first_seen }
@@ -372,7 +380,7 @@ async function setStandards(env: Env, text: string) {
 }
 
 // --------- Handlers ---------
-async function handleSentry(req: Request, env: Env) {
+async function handleSentryToClickUp(req: Request, env: Env) {
   const url = new URL(req.url);
   if (env.SENTRY_SHARED_TOKEN && url.searchParams.get("token") !== env.SENTRY_SHARED_TOKEN) {
     return err("unauthorized", 401);
@@ -426,7 +434,7 @@ async function handleSentry(req: Request, env: Env) {
   return ok(msg, cu.created ? 201 : 200);
 }
 
-async function handleClickUp(req: Request, env: Env) {
+async function handleClickUpToGitHub(req: Request, env: Env) {
   const url = new URL(req.url);
   if (env.CLICKUP_SHARED_TOKEN && url.searchParams.get("token") !== env.CLICKUP_SHARED_TOKEN) {
     return err("unauthorized", 401);
@@ -520,7 +528,7 @@ async function handleClickUp(req: Request, env: Env) {
   return ok(`GH issue #${issueNo} created/updated from ClickUp tag.`);
 }
 
-async function handleStandards(req: Request, env: Env) {
+async function handleAdminStandards(req: Request, env: Env) {
   const url = new URL(req.url);
   if (!env.ADMIN_TOKEN || url.searchParams.get("token") !== env.ADMIN_TOKEN) {
     return err("unauthorized", 401);
@@ -543,10 +551,10 @@ export default {
   async fetch(req: Request, env: Env): Promise<Response> {
     try {
       const { pathname } = new URL(req.url);
-      if (pathname === "/health") return ok("ok");
-      if (pathname === "/webhooks/sentry") return handleSentry(req, env);
-      if (pathname === "/webhooks/clickup") return handleClickUp(req, env);
-      if (pathname === "/admin/standards") return handleStandards(req, env);
+  if (pathname === "/health") return ok("ok");
+  if (pathname === "/webhooks/sentry") return handleSentryToClickUp(req, env);
+  if (pathname === "/webhooks/clickup") return handleClickUpToGitHub(req, env);
+  if (pathname === "/admin/standards") return handleAdminStandards(req, env);
       return ok("Worker is running");
     } catch (e: any) {
       console.error("Unhandled error:", e?.message || e);
